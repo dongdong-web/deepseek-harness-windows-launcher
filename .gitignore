@@ -1,0 +1,13 @@
+# Build outputs and downloaded third-party runtime payloads
+/artifacts/cache/
+/artifacts/portable/
+
+# Local state
+/.dsh-home/
+/logs/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

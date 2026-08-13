@@ -1,0 +1,10 @@
+{
+  "name": "deepseek-harness-community-runtime",
+  "private": true,
+  "version": "0.1.0-dev",
+  "description": "Pinned production dependency closure for DeepSeek Harness Community Launcher",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6"
+  }
+}
