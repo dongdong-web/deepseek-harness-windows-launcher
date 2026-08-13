@@ -33,18 +33,27 @@
   ./artifacts/portable/DeepSeekHarness/app/node_modules/@deepseek-ai/dsh/lib/bin.js web
 ```
 
-正式启动器会在下一阶段封装此调用，并处理端口、单实例、日志、浏览器打开和进程退出。
+便携版已经包含正式启动器。双击 `launcher/start.vbs` 会在后台启动 DSH 并自动打开浏览器；需要查看命令输出或诊断时，使用 `launcher/start.cmd`：
+
+```powershell
+./artifacts/portable/DeepSeekHarness/launcher/start.cmd status
+./artifacts/portable/DeepSeekHarness/launcher/start.cmd stop
+```
+
+启动器会处理端口冲突、单实例、日志、浏览器打开、私有环境变量和进程退出。
 
 验证运行时与 Web UI：
 
 ```powershell
 ./scripts/verify-runtime.ps1
 ./scripts/smoke-web.ps1
+./tests/launcher-core-test.mjs
+./tests/launcher-integration.ps1
 ```
 
 ## 数据与安全边界
 
-- Harness 数据目录将由启动器设置在 `%LOCALAPPDATA%\DeepSeekHarness\data`。
+- Harness 数据目录将由启动器设置在 `%LOCALAPPDATA%\DeepSeekHarness`；首次启动默认使用其下的空工作目录，而不是整个用户主目录。需要指定项目时可执行 `start.cmd start --workspace "D:\你的项目"`。
 - DeepSeek API Key 由官方 Harness Web UI 写入其凭据存储；本启动器不收集、不上传、不打印密钥。
 - Web UI 只监听本机回环地址，不对局域网暴露。
 - 本项目为非官方社区项目，与 DeepSeek 官方无隶属或授权关系。

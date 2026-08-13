@@ -114,6 +114,10 @@ $portableApp = Join-Path $portableRoot 'app'
 New-Item -ItemType Directory -Force -Path $portableApp | Out-Null
 Copy-Item -LiteralPath (Join-Path $repoRoot 'app/package.json') -Destination (Join-Path $portableApp 'package.json') -Force
 
+$portableLauncher = Join-Path $portableRoot 'launcher'
+New-Item -ItemType Directory -Force -Path $portableLauncher | Out-Null
+Copy-Item -Path (Join-Path $repoRoot 'launcher/*') -Destination $portableLauncher -Force
+
 $lockFile = Join-Path $repoRoot 'app/package-lock.json'
 if (Test-Path -LiteralPath $lockFile) {
     Copy-Item -LiteralPath $lockFile -Destination (Join-Path $portableApp 'package-lock.json') -Force

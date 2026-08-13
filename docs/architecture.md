@@ -10,8 +10,9 @@
 2. 私有 PowerShell 7 会随 Windows x64 载荷分发，优先放在子进程 `PATH` 前方。
 3. `@deepseek-ai/dsh` 使用精确版本号和 npm integrity 固定。用户机器不会运行未锁版本的 `npx`。
 4. 构建时下载全部第三方载荷并校验 SHA-256；运行时载荷不提交进 Git。
-5. 用户数据与程序分离：程序位于 `%LOCALAPPDATA%\Programs\DeepSeekHarness`，数据位于 `%LOCALAPPDATA%\DeepSeekHarness\data`。
+5. 用户数据与程序分离：程序位于 `%LOCALAPPDATA%\Programs\DeepSeekHarness`，数据位于 `%LOCALAPPDATA%\DeepSeekHarness`；默认工作目录是其下的空 `workspace`，不把整个用户主目录作为 Harness 的工作根目录。
 6. 未来更新采用并存版本、健康检查、显式切换和可回退方式；不覆盖运行中的旧版本。
+7. 便携版启动器以私有 Node 运行。`start.vbs` 负责无窗口双击启动，`start.cmd` 用于命令行诊断；后续安装包将把两者包装为桌面快捷方式和原生启动器。
 
 ## 不变量
 
@@ -20,6 +21,8 @@
 - 不读取、上传或记录 DeepSeek API Key。
 - Web UI 的默认绑定地址必须是 `127.0.0.1`。
 - 运行时版本必须来自 [`../config/runtime-manifest.json`](../config/runtime-manifest.json)。
+- 启动器仅将私有 Node 和 PowerShell 前置给 DSH 子进程；不会写入系统或用户环境变量。
+- 启动器日志会脱敏符合 `sk-...` 格式的 API Key。
 
 ## 构建源策略
 
