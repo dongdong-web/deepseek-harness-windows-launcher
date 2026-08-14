@@ -11,7 +11,7 @@ Set-StrictMode -Version Latest
 $nodeExe = Join-Path $RuntimeRoot 'runtime/node/node.exe'
 $pwshDirectory = Join-Path $RuntimeRoot 'runtime/pwsh'
 $dshEntry = Join-Path $RuntimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js'
-$smokeHome = Join-Path $RuntimeRoot '.smoke-dsh-home'
+$smokeHome = Join-Path ([System.IO.Path]::GetTempPath()) ('dsh-smoke-home-' + [Guid]::NewGuid().ToString('N'))
 
 foreach ($requiredPath in @($nodeExe, $pwshDirectory, $dshEntry)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
@@ -76,4 +76,7 @@ try {
     if ($null -eq $savedDshHome) { Remove-Item Env:DSH_HOME -ErrorAction SilentlyContinue } else { $env:DSH_HOME = $savedDshHome }
     if ($null -eq $savedNodeOptions) { Remove-Item Env:NODE_OPTIONS -ErrorAction SilentlyContinue } else { $env:NODE_OPTIONS = $savedNodeOptions }
     if ($null -eq $savedNodePath) { Remove-Item Env:NODE_PATH -ErrorAction SilentlyContinue } else { $env:NODE_PATH = $savedNodePath }
+    if (Test-Path -LiteralPath $smokeHome) {
+        Remove-Item -LiteralPath $smokeHome -Recurse -Force
+    }
 }

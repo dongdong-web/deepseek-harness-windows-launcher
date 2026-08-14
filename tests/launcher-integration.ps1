@@ -53,9 +53,24 @@ try {
         throw "Launcher did not create its private default workspace. Expected: $expectedWorkspace Actual: $($instance.workspace)"
     }
 
-    $webResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$expectedPort" -TimeoutSec 10
-    if ($webResponse.StatusCode -ne 200) {
-        throw "Harness Web UI returned HTTP $($webResponse.StatusCode), expected HTTP 200."
+    $webDeadline = (Get-Date).AddSeconds(30)
+    $webResponse = $null
+    $webError = $null
+    while ((Get-Date) -lt $webDeadline) {
+        try {
+            $webResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$expectedPort" -TimeoutSec 5
+            if ($webResponse.StatusCode -eq 200) {
+                break
+            }
+            $webError = "Harness Web UI returned HTTP $($webResponse.StatusCode), expected HTTP 200."
+        } catch {
+            $webError = $_.Exception.Message
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    if ($null -eq $webResponse -or $webResponse.StatusCode -ne 200) {
+        $launcherOutput = (Get-Content -LiteralPath $startOutput -Raw -ErrorAction SilentlyContinue) + (Get-Content -LiteralPath $startError -Raw -ErrorAction SilentlyContinue)
+        throw "Harness Web UI did not become ready at http://127.0.0.1:$expectedPort. Last error: $webError Launcher output: $launcherOutput"
     }
 
     $duplicateStart = & $nodeExe $launcher start --port $Port --no-browser 2>&1

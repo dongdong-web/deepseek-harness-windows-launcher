@@ -42,6 +42,16 @@
 
 启动器会处理端口冲突、单实例、日志、浏览器打开、私有环境变量和进程退出。
 
+## 构建可发布 ZIP 包
+
+在 Windows PowerShell 中运行：
+
+```powershell
+./scripts/build-portable-zip.ps1
+```
+
+会生成 `artifacts/dist/DeepSeekHarness-Portable-*.zip` 及同名的 `.sha256` 校验文件。用户下载后只需解压 ZIP 到任意空目录，再双击其中的 `launcher\start.vbs`；不需要管理员权限，也不会安装或修改 Node.js、npm、PowerShell 或 `PATH`。如果 3080 被占用，启动器会自动尝试后续端口。
+
 验证运行时与 Web UI：
 
 ```powershell
@@ -49,6 +59,8 @@
 ./scripts/smoke-web.ps1
 ./tests/launcher-core-test.mjs
 ./tests/launcher-integration.ps1
+./tests/portable-zip-test.ps1
+./tests/portable-zip-e2e.ps1
 ```
 
 ## 数据与安全边界

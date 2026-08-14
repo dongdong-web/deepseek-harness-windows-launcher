@@ -1,6 +1,9 @@
 # Build outputs and downloaded third-party runtime payloads
 /artifacts/cache/
 /artifacts/portable/
+/artifacts/dist/
+/artifacts/installer-*/
+/artifacts/portable-zip-*/
 
 # Local state
 /.dsh-home/
