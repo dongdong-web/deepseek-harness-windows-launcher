@@ -33,6 +33,7 @@ try {
   });
   assert.equal(environment.DSH_HOME, join(testRoot, 'DeepSeekHarness', 'dsh'));
   assert.equal(paths.workspaceRoot, join(testRoot, 'DeepSeekHarness', 'workspace'));
+  assert.equal(paths.drivePickerPackageDirectory, normalize('C:/portable/DeepSeekHarness/app/node_modules/@dsh-community/dsh-client-ui-drive-picker'));
   assert.ok(environment.PATH.startsWith(normalize('C:/portable/DeepSeekHarness/runtime/pwsh')));
   assert.equal(environment.NODE_OPTIONS, undefined);
   assert.equal(environment.NODE_PATH, undefined);

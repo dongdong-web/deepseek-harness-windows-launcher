@@ -12,6 +12,7 @@ const clientSource = readFileSync(join(packageRoot, 'client.js'), 'utf8');
 assert.equal(manifest.name, '@dsh-community/dsh-client-ui-drive-picker');
 assert.equal(manifest.dsh.client.platform, 'web');
 assert.equal(manifest.exports['./client'], './client.js');
+assert.equal(manifest.exports['./package.json'], './package.json');
 
 let registration;
 vm.runInNewContext(clientSource, {

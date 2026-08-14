@@ -95,6 +95,13 @@ try {
         $launcherOutput = (Get-Content -LiteralPath $startOutput -Raw -ErrorAction SilentlyContinue) + (Get-Content -LiteralPath $startError -Raw -ErrorAction SilentlyContinue)
         throw "Harness Web UI did not become ready at http://127.0.0.1:$expectedPort. Last error: $webError Launcher output: $launcherOutput"
     }
+    if ($webResponse.Content -notmatch '@dsh-community/dsh-client-ui-drive-picker') {
+        throw 'Harness Web UI boot manifest does not include the community drive-picker client.'
+    }
+    $drivePickerResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$expectedPort/plugins/@dsh-community/dsh-client-ui-drive-picker/client.js" -TimeoutSec 10
+    if ($drivePickerResponse.StatusCode -ne 200 -or $drivePickerResponse.Content -notmatch 'window.__ModuleLoader__.load') {
+        throw 'Harness did not serve the community drive-picker browser bundle.'
+    }
 
     $duplicateStart = & $nodeExe $launcher start --port $Port --no-browser 2>&1
     if ($LASTEXITCODE -ne 0 -or $duplicateStart -notmatch 'already running') {
