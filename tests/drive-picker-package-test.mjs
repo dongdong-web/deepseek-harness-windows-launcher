@@ -13,6 +13,8 @@ assert.equal(manifest.name, '@dsh-community/dsh-client-ui-drive-picker');
 assert.equal(manifest.dsh.client.platform, 'web');
 assert.equal(manifest.exports['./client'], './client.js');
 assert.equal(manifest.exports['./package.json'], './package.json');
+assert.match(clientSource, /sidebar\.footer\.action/);
+assert.match(clientSource, /\/launcher\/exit/);
 
 let registration;
 vm.runInNewContext(clientSource, {
@@ -31,5 +33,34 @@ assert.deepEqual(
   'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) => `${letter}:\\`),
 );
 assert.deepEqual(Array.from(plugin.driveCandidates({ home: '/home/example' })), []);
+
+let exitSlotRegistration;
+plugin.apply({
+  effect(callback) {
+    callback();
+  },
+  locale: {
+    bind() {
+      return (key) => key;
+    },
+    register() {
+      return () => {};
+    },
+  },
+  slots: {
+    inject(name, callback) {
+      if (name !== 'sidebar.footer.action') return () => {};
+      const registrations = callback();
+      for (const registrationValue of registrations) exitSlotRegistration = registrationValue;
+      return () => {};
+    },
+    register(options, component) {
+      return { options, component };
+    },
+  },
+});
+assert.equal(exitSlotRegistration.options.name, 'sidebar.footer.action');
+assert.equal(exitSlotRegistration.options.id, 'launcher-exit');
+assert.equal(typeof exitSlotRegistration.component, 'function');
 
 console.log('Drive picker package tests passed.');

@@ -25,6 +25,7 @@
 - 运行时版本必须来自 [`../config/runtime-manifest.json`](../config/runtime-manifest.json)。
 - 启动器仅将私有 Node 和 PowerShell 前置给 DSH 子进程；不会写入系统或用户环境变量。
 - 启动器日志会脱敏符合 `sk-...` 格式的 API Key。
+- 网页内退出请求只能携带该次启动随机生成的令牌访问本机精确路由；请求先完成响应，再经官方 `appExit` 通道优雅关闭 DSH。
 - 工作区目录选择覆盖层必须作为启动器运行时的一部分分发，并在启动 DSH 时通过 `--patch` 传入。
 - Windows 盘符由社区 Client 通过官方目录列表 API 仅探测已挂载的 `C:` 至 `Z:`；不会挂载磁盘、修改权限或枚举网络共享。网络共享继续要求用户显式输入完整 UNC 路径。
 

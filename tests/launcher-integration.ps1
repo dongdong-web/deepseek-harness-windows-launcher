@@ -98,6 +98,10 @@ try {
     if ($webResponse.Content -notmatch '@dsh-community/dsh-client-ui-drive-picker') {
         throw 'Harness Web UI boot manifest does not include the community drive-picker client.'
     }
+    $exitTokenMatch = [regex]::Match($webResponse.Content, '<meta name="dsh-launcher-exit-token" content="([a-f0-9]{64})">')
+    if (-not $exitTokenMatch.Success) {
+        throw 'Harness Web UI did not expose the launcher exit token to its own page.'
+    }
     $drivePickerResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$expectedPort/plugins/@dsh-community/dsh-client-ui-drive-picker/client.js" -TimeoutSec 10
     if ($drivePickerResponse.StatusCode -ne 200 -or $drivePickerResponse.Content -notmatch 'window.__ModuleLoader__.load') {
         throw 'Harness did not serve the community drive-picker browser bundle.'
@@ -108,16 +112,26 @@ try {
         throw "Duplicate start did not reuse the existing instance: $duplicateStart"
     }
 
-    & $nodeExe $launcher stop
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Launcher stop command failed.'
+    $exitResponse = Invoke-WebRequest -UseBasicParsing -Method Post -Uri "http://127.0.0.1:$expectedPort/launcher/exit" -Headers @{ 'X-Dsh-Launcher-Exit-Token' = $exitTokenMatch.Groups[1].Value } -TimeoutSec 10
+    if ($exitResponse.StatusCode -ne 202) {
+        throw "Browser exit endpoint returned HTTP $($exitResponse.StatusCode), expected HTTP 202."
     }
-    $startProcess.WaitForExit(15000) | Out-Null
-    if (-not $startProcess.HasExited) {
-        throw 'Original launcher process did not exit after stop.'
+    $shutdownDeadline = (Get-Date).AddSeconds(15)
+    while ((Get-Date) -lt $shutdownDeadline) {
+        $stoppedStatus = & $nodeExe $launcher status 2>&1
+        if ($LASTEXITCODE -eq 0 -and $stoppedStatus -match 'not running') {
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if (-not $startProcess.WaitForExit(1000)) {
+        throw 'Browser exit endpoint did not stop the original launcher process.'
     }
 
     Write-Host 'Launcher integration test passed.'
+    # `launcher status` intentionally returns 3 after a successful shutdown.
+    # Do not leak that expected diagnostic status as this test's own result.
+    $global:LASTEXITCODE = 0
 } finally {
     if ($null -ne $startProcess -and -not $startProcess.HasExited) {
         Stop-Process -Id $startProcess.Id -Force

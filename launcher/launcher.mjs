@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:net';
 import { appendFileSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -13,6 +14,10 @@ const API_KEY_PATTERN = /\bsk-[a-zA-Z0-9_-]{12,}\b/g;
 
 export function sanitizeLogText(value) {
   return String(value).replace(API_KEY_PATTERN, '[REDACTED_API_KEY]');
+}
+
+export function createLauncherExitToken() {
+  return randomBytes(32).toString('hex');
 }
 
 export function parseCommandLine(argumentsList) {
@@ -89,6 +94,7 @@ export function buildHarnessEnvironment(paths, environment = process.env) {
     'NODE_PATH',
     'NPM_CONFIG_PREFIX',
     'NPM_CONFIG_USERCONFIG',
+    'DSH_LAUNCHER_EXIT_TOKEN',
     'npm_config_prefix',
     'npm_config_userconfig',
   ]) {
@@ -349,9 +355,11 @@ export async function startHarness(paths, options) {
     createLaunchLock(paths, instance);
     ownsLaunchLock = true;
     writeLog(logPath, 'launcher', `Starting DeepSeek Harness on http://127.0.0.1:${port}.`);
+    const childEnvironment = buildHarnessEnvironment(paths);
+    childEnvironment.DSH_LAUNCHER_EXIT_TOKEN = createLauncherExitToken();
     child = spawn(paths.nodeExe, buildHarnessArguments(paths, port), {
       cwd: workspace,
-      env: buildHarnessEnvironment(paths),
+      env: childEnvironment,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
     });

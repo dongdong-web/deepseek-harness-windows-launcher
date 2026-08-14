@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import {
   buildHarnessArguments,
   buildHarnessEnvironment,
+  createLauncherExitToken,
   ensureCommunityPluginProfileFallback,
   findAvailablePort,
   isPortAvailable,
@@ -29,6 +30,7 @@ try {
     NODE_OPTIONS: '--inspect',
     NODE_PATH: 'C:/bad',
     PATH: 'C:/Windows',
+    DSH_LAUNCHER_EXIT_TOKEN: 'spoofed-token',
     npm_config_prefix: 'C:/bad',
   });
   assert.equal(environment.DSH_HOME, join(testRoot, 'DeepSeekHarness', 'dsh'));
@@ -38,6 +40,8 @@ try {
   assert.equal(environment.NODE_OPTIONS, undefined);
   assert.equal(environment.NODE_PATH, undefined);
   assert.equal(environment.npm_config_prefix, undefined);
+  assert.equal(environment.DSH_LAUNCHER_EXIT_TOKEN, undefined);
+  assert.match(createLauncherExitToken(), /^[a-f0-9]{64}$/);
   assert.deepEqual(buildHarnessArguments(paths, 32000), [
     paths.dshEntry,
     '--profile', 'web',

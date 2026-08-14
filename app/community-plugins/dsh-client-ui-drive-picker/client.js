@@ -10,6 +10,8 @@ window.__ModuleLoader__.load({
     const LOCALE_NS = 'community-drive-picker';
     const inject = ['slots', 'workspaces', 'locale'];
     const DRIVE_LETTERS = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const LAUNCHER_EXIT_ENDPOINT = '/launcher/exit';
+    const LAUNCHER_EXIT_TOKEN_HEADER = 'X-Dsh-Launcher-Exit-Token';
     const STYLE_ID = 'dsh-community-drive-picker-style';
     const STYLE_TEXT = `
       .dshCommunityDrivePicker{gap:0;width:min(720px,100%);height:min(560px,100dvh - 32px);padding:0}
@@ -35,6 +37,11 @@ window.__ModuleLoader__.load({
       .dshCommunityDrivePickerSpacer{flex:1}
       .dshCommunityDrivePickerNewFolder{display:flex;gap:8px;margin:0 24px 16px}
       .dshCommunityDrivePickerNewFolder input{box-sizing:border-box;min-width:0;height:34px;flex:1;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);padding:0 9px;font:inherit;font-size:13px}
+      .dshCommunityLauncherExit{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0;padding:4px 2px}
+      .dshCommunityLauncherExitButton{box-sizing:border-box;width:100%;min-height:32px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font:inherit;font-size:13px}
+      .dshCommunityLauncherExitButton:hover{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}
+      .dshCommunityLauncherExitButton:disabled{cursor:default;color:var(--dsw-alias-label-caption);border-color:var(--dsw-alias-border-l3)}
+      .dshCommunityLauncherExitError{color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}
       @media (prefers-reduced-motion:reduce){.dshCommunityDrivePicker *{scroll-behavior:auto}}
     `;
 
@@ -314,6 +321,55 @@ window.__ModuleLoader__.load({
       });
     }
 
+    async function requestLauncherExit() {
+      const token = document.querySelector('meta[name="dsh-launcher-exit-token"]')?.getAttribute('content');
+      if (!token) throw new Error('The local exit token is unavailable. Please use the launcher stop command instead.');
+      const response = await fetch(LAUNCHER_EXIT_ENDPOINT, {
+        method: 'POST',
+        headers: { [LAUNCHER_EXIT_TOKEN_HEADER]: token },
+        cache: 'no-store',
+      });
+      if (response.status !== 202) throw new Error(`Unable to stop DeepSeek Harness (HTTP ${response.status}).`);
+    }
+
+    function LauncherExitButton({ wide, t }) {
+      const [stopping, setStopping] = React.useState(false);
+      const [error, setError] = React.useState(null);
+
+      React.useEffect(() => {
+        ensureStyles();
+      }, []);
+
+      const stop = async () => {
+        if (stopping || !window.confirm(t('launcher.exitConfirm'))) return;
+        setStopping(true);
+        setError(null);
+        try {
+          await requestLauncherExit();
+        } catch (reason) {
+          setError(formatError(reason));
+          setStopping(false);
+        }
+      };
+
+      const label = stopping ? t('launcher.stopping') : t('launcher.exit');
+      return jsxs('div', {
+        className: 'dshCommunityLauncherExit',
+        children: [
+          jsx('button', {
+            type: 'button',
+            className: 'dshCommunityLauncherExitButton',
+            disabled: stopping,
+            onClick: stop,
+            title: t('launcher.exit'),
+            'aria-label': t('launcher.exit'),
+            children: wide ? label : '⏻',
+          }),
+          error !== null && jsx('div', { className: 'dshCommunityLauncherExitError', role: 'alert', children: error }),
+        ],
+      });
+    }
+
     function apply(ctx) {
       ctx.effect(() => {
         const disposers = [];
@@ -332,6 +388,9 @@ window.__ModuleLoader__.load({
             'drivePicker.cancel': '取消',
             'drivePicker.open': '选择当前文件夹',
             'drivePicker.showHidden': '显示隐藏文件',
+            'launcher.exit': '退出 DeepSeek Harness',
+            'launcher.exitConfirm': '确定要退出 DeepSeek Harness 吗？后台服务将被关闭。',
+            'launcher.stopping': '正在退出…',
           }],
           ['en', {
             'drivePicker.title': 'Select Workspace Directory',
@@ -347,6 +406,9 @@ window.__ModuleLoader__.load({
             'drivePicker.cancel': 'Cancel',
             'drivePicker.open': 'Select current folder',
             'drivePicker.showHidden': 'Show hidden files',
+            'launcher.exit': 'Exit DeepSeek Harness',
+            'launcher.exitConfirm': 'Exit DeepSeek Harness? The local background service will stop.',
+            'launcher.stopping': 'Stopping…',
           }],
         ];
         try {
@@ -365,15 +427,27 @@ window.__ModuleLoader__.load({
         createDirectory: (path, name) => ctx.workspaces.createDirectory(path, name),
         t: ctx.locale.bind(LOCALE_NS),
       });
+      const exitInjected = () => ({
+        t: ctx.locale.bind(LOCALE_NS),
+      });
       ctx.slots.inject('conversation.hero.workspace.directoryFlow', () => ctx.slots.inject('sidebar.workspaces.directoryFlow', function* () {
         yield ctx.slots.register({ name: 'conversation.hero.workspace.directoryFlow', inject: injected }, DriveDirectoryFlow);
         yield ctx.slots.register({ name: 'sidebar.workspaces.directoryFlow', inject: injected }, DriveDirectoryFlow);
       }));
+      ctx.slots.inject('sidebar.footer.action', function* () {
+        yield ctx.slots.register({
+          name: 'sidebar.footer.action',
+          id: 'launcher-exit',
+          order: 100,
+          inject: exitInjected,
+        }, LauncherExitButton);
+      });
     }
 
     exports.apply = apply;
     exports.inject = inject;
     exports.driveCandidates = driveCandidates;
+    exports.requestLauncherExit = requestLauncherExit;
     return module.exports;
   },
 });
