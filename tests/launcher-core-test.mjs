@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join, normalize } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { join, normalize, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   buildHarnessArguments,
   buildHarnessEnvironment,
+  ensureCommunityPluginProfileFallback,
   findAvailablePort,
   isPortAvailable,
   parseCommandLine,
@@ -43,6 +44,26 @@ try {
     '--host', '127.0.0.1',
     '--port', '32000',
   ]);
+
+  const firstPluginDirectory = join(testRoot, 'drive-picker-one');
+  const secondPluginDirectory = join(testRoot, 'drive-picker-two');
+  for (const pluginDirectory of [firstPluginDirectory, secondPluginDirectory]) {
+    mkdirSync(pluginDirectory, { recursive: true });
+    writeFileSync(join(pluginDirectory, 'client.js'), 'export {};\n');
+  }
+  const pluginPaths = {
+    ...paths,
+    drivePickerPackageDirectory: firstPluginDirectory,
+    drivePickerProfileLink: join(testRoot, 'DeepSeekHarness', 'dsh', 'profiles', 'node_modules', '@dsh-community', 'dsh-client-ui-drive-picker'),
+  };
+  ensureCommunityPluginProfileFallback(pluginPaths);
+  assert.equal(lstatSync(pluginPaths.drivePickerProfileLink).isSymbolicLink(), true);
+  assert.equal(resolve(realpathSync(pluginPaths.drivePickerProfileLink)), resolve(realpathSync(firstPluginDirectory)));
+  ensureCommunityPluginProfileFallback({ ...pluginPaths, drivePickerPackageDirectory: secondPluginDirectory });
+  assert.equal(resolve(realpathSync(pluginPaths.drivePickerProfileLink)), resolve(realpathSync(secondPluginDirectory)));
+  rmSync(pluginPaths.drivePickerProfileLink, { recursive: true, force: true });
+  mkdirSync(pluginPaths.drivePickerProfileLink, { recursive: true });
+  assert.throws(() => ensureCommunityPluginProfileFallback(pluginPaths), /not launcher-managed/);
 
   const port = await findAvailablePort(32000, 5);
   assert.equal(await isPortAvailable(port), true);

@@ -11,8 +11,9 @@ Set-StrictMode -Version Latest
 $nodeExe = Join-Path $RuntimeRoot 'runtime/node/node.exe'
 $launcher = Join-Path $RuntimeRoot 'launcher/launcher.mjs'
 $dshEntry = Join-Path $RuntimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js'
+$drivePickerClient = Join-Path $RuntimeRoot 'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/client.js'
 $directoryPickerPatch = Join-Path $RuntimeRoot 'launcher/browse-directory-picker.patch.yml'
-foreach ($requiredPath in @($nodeExe, $launcher, $dshEntry, $directoryPickerPatch)) {
+foreach ($requiredPath in @($nodeExe, $launcher, $dshEntry, $drivePickerClient, $directoryPickerPatch)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required launcher path is missing: $requiredPath"
     }
@@ -34,8 +35,8 @@ try {
         throw "Harness rejected the browse directory-picker patch: $configOutput"
     }
     $configText = $configOutput -join "`n"
-    if ($configText -notmatch '@deepseek-ai/dsh-host-directory-picker-browse' -or $configText -notmatch '@deepseek-ai/dsh-client-ui-directory-picker-browse') {
-        throw "Harness did not compose the official in-page directory picker: $configText"
+    if ($configText -notmatch '@deepseek-ai/dsh-host-directory-picker-browse' -or $configText -notmatch '@dsh-community/dsh-client-ui-drive-picker') {
+        throw "Harness did not compose the drive-aware in-page directory picker: $configText"
     }
     $portReservation = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
     $portReservation.Start()
@@ -56,6 +57,11 @@ try {
         $launcherOutput = (Get-Content -LiteralPath $startOutput -Raw -ErrorAction SilentlyContinue) + (Get-Content -LiteralPath $startError -Raw -ErrorAction SilentlyContinue)
         $exitDescription = if ($startProcess.HasExited) { " Launcher exit code: $($startProcess.ExitCode)." } else { '' }
         throw "Launcher did not report a running instance.$exitDescription Last status: $statusOutput Launcher output: $launcherOutput"
+    }
+
+    $profileDrivePicker = Join-Path $testRoot 'DeepSeekHarness/dsh/profiles/node_modules/@dsh-community/dsh-client-ui-drive-picker/client.js'
+    if (-not (Test-Path -LiteralPath $profileDrivePicker -PathType Leaf)) {
+        throw "Launcher did not create the managed community drive-picker profile link: $profileDrivePicker"
     }
 
     $instancePath = Join-Path $testRoot 'DeepSeekHarness/launcher/instance.json'

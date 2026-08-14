@@ -1,8 +1,9 @@
 # The community launcher deliberately prefers DSH's in-page directory browser
 # on Windows.  The stock auto picker opens a separate native window, which can
 # remain behind the browser on some Windows desktops.  This official DSH patch
-# replaces that auto row with the browser-backed pair; it is passed via --patch
-# and never written into a user's DSH profile.
+# replaces that auto row with the official browser-backed host plus this
+# launcher's drive-aware browser client; it is passed via --patch and never
+# written into a user's DSH profile.
 - id: directory-picker
   disabled: true
 
@@ -11,4 +12,4 @@
       name: '@deepseek-ai/dsh-host-directory-picker-browse'
 
     - id: directory-picker-browse-client
-      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+      name: '@dsh-community/dsh-client-ui-drive-picker'

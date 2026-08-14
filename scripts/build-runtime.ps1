@@ -154,6 +154,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "npm install failed with exit code $LASTEXITCODE."
 }
 
+$drivePickerSource = Join-Path $repoRoot 'app/community-plugins/dsh-client-ui-drive-picker'
+$drivePickerDestination = Join-Path $portableApp 'node_modules/@dsh-community/dsh-client-ui-drive-picker'
+if (-not (Test-Path -LiteralPath $drivePickerSource -PathType Container)) {
+    throw "Community drive-picker source is missing: $drivePickerSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $drivePickerDestination) | Out-Null
+Copy-Item -LiteralPath $drivePickerSource -Destination $drivePickerDestination -Recurse -Force
+
 $entryPoint = Join-Path $portableApp $manifest.dsh.entryPoint
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     throw "DSH entry point was not found at '$entryPoint'."

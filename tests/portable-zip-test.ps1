@@ -24,6 +24,7 @@ try {
         'runtime/node',
         'runtime/pwsh',
         'app/node_modules/@deepseek-ai/dsh/lib',
+        'app/node_modules/@dsh-community/dsh-client-ui-drive-picker',
         'launcher',
         '.smoke-dsh-home'
     )) {
@@ -32,6 +33,8 @@ try {
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'runtime/node/node.exe') -Value 'fixture-node'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'runtime/pwsh/pwsh.exe') -Value 'fixture-pwsh'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js') -Value 'fixture-dsh'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/client.js') -Value 'fixture-drive-picker-client'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/package.json') -Value '{"name":"fixture-drive-picker"}'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.vbs') -Value 'fixture-vbs'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.cmd') -Value 'fixture-cmd'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/browse-directory-picker.patch.yml') -Value 'fixture-directory-picker-patch'
@@ -64,6 +67,8 @@ try {
         'runtime/node/node.exe',
         'runtime/pwsh/pwsh.exe',
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
+        'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/client.js',
+        'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/package.json',
         'launcher/start.vbs',
         'launcher/start.cmd',
         'launcher/browse-directory-picker.patch.yml',

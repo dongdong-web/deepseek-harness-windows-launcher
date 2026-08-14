@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,6 +69,8 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
     dataRoot,
     directoryPickerPatchPath: join(root, 'launcher', 'browse-directory-picker.patch.yml'),
     dshEntry: join(root, 'app', 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
+    drivePickerPackageDirectory: join(root, 'app', 'node_modules', '@dsh-community', 'dsh-client-ui-drive-picker'),
+    drivePickerProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@dsh-community', 'dsh-client-ui-drive-picker'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
     logRoot: join(dataRoot, 'logs'),
     nodeDirectory: join(root, 'runtime', 'node'),
@@ -158,11 +160,49 @@ export function readInstance(lockPath, now = Date.now()) {
 }
 
 function ensureRuntimeFiles(paths) {
-  for (const requiredPath of [paths.nodeExe, paths.dshEntry, paths.pwshDirectory, paths.directoryPickerPatchPath]) {
+  for (const requiredPath of [
+    paths.nodeExe,
+    paths.dshEntry,
+    paths.pwshDirectory,
+    paths.directoryPickerPatchPath,
+    join(paths.drivePickerPackageDirectory, 'package.json'),
+    join(paths.drivePickerPackageDirectory, 'client.js'),
+  ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
     }
   }
+}
+
+export function ensureCommunityPluginProfileFallback(paths) {
+  const targetDirectory = paths.drivePickerPackageDirectory;
+  const profileLink = paths.drivePickerProfileLink;
+
+  let existing;
+  try {
+    existing = lstatSync(profileLink);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  if (existing) {
+    if (!existing.isSymbolicLink()) {
+      throw new Error(`Community drive-picker path already exists and is not launcher-managed: ${profileLink}`);
+    }
+    try {
+      if (resolve(realpathSync(profileLink)) === resolve(realpathSync(targetDirectory))) {
+        return;
+      }
+    } catch {
+      // The runtime may have moved after an upgrade; replace only this managed link.
+    }
+    unlinkSync(profileLink);
+  }
+
+  mkdirSync(dirname(profileLink), { recursive: true });
+  symlinkSync(targetDirectory, profileLink, 'junction');
 }
 
 export function buildHarnessArguments(paths, port) {
@@ -291,6 +331,7 @@ export async function startHarness(paths, options) {
   const port = await findAvailablePort(options.port);
   mkdirSync(paths.logRoot, { recursive: true });
   mkdirSync(paths.dshHome, { recursive: true });
+  ensureCommunityPluginProfileFallback(paths);
 
   const logPath = join(paths.logRoot, `dsh-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
   const instance = {

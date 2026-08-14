@@ -38,6 +38,8 @@ try {
         'runtime/node/node.exe',
         'runtime/pwsh/pwsh.exe',
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
+        'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/client.js',
+        'app/node_modules/@dsh-community/dsh-client-ui-drive-picker/package.json',
         'launcher/start.vbs',
         'launcher/start.cmd',
         'launcher/browse-directory-picker.patch.yml',
