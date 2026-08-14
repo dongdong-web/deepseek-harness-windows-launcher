@@ -34,6 +34,7 @@ try {
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js') -Value 'fixture-dsh'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.vbs') -Value 'fixture-vbs'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.cmd') -Value 'fixture-cmd'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/browse-directory-picker.patch.yml') -Value 'fixture-directory-picker-patch'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'runtime-manifest.json') -Value '{"launcher":{"version":"test"}}'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'LICENSE') -Value 'fixture-license'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'README.md') -Value 'fixture-readme'
@@ -65,6 +66,7 @@ try {
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
         'launcher/start.vbs',
         'launcher/start.cmd',
+        'launcher/browse-directory-picker.patch.yml',
         'runtime-manifest.json',
         'LICENSE',
         'README.md',

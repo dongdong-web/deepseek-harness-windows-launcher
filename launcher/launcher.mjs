@@ -67,6 +67,7 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
   const dataRoot = resolve(localAppData || join(homedir(), 'AppData', 'Local'), 'DeepSeekHarness');
   return {
     dataRoot,
+    directoryPickerPatchPath: join(root, 'launcher', 'browse-directory-picker.patch.yml'),
     dshEntry: join(root, 'app', 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
     logRoot: join(dataRoot, 'logs'),
@@ -157,11 +158,21 @@ export function readInstance(lockPath, now = Date.now()) {
 }
 
 function ensureRuntimeFiles(paths) {
-  for (const requiredPath of [paths.nodeExe, paths.dshEntry, paths.pwshDirectory]) {
+  for (const requiredPath of [paths.nodeExe, paths.dshEntry, paths.pwshDirectory, paths.directoryPickerPatchPath]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
     }
   }
+}
+
+export function buildHarnessArguments(paths, port) {
+  return [
+    paths.dshEntry,
+    '--profile', 'web',
+    '--patch', paths.directoryPickerPatchPath,
+    '--host', '127.0.0.1',
+    '--port', String(port),
+  ];
 }
 
 function ensureContainedPath(root, target, label) {
@@ -297,7 +308,7 @@ export async function startHarness(paths, options) {
     createLaunchLock(paths, instance);
     ownsLaunchLock = true;
     writeLog(logPath, 'launcher', `Starting DeepSeek Harness on http://127.0.0.1:${port}.`);
-    child = spawn(paths.nodeExe, [paths.dshEntry, 'web', '--host', '127.0.0.1', '--port', String(port)], {
+    child = spawn(paths.nodeExe, buildHarnessArguments(paths, port), {
       cwd: workspace,
       env: buildHarnessEnvironment(paths),
       stdio: ['ignore', 'pipe', 'pipe'],

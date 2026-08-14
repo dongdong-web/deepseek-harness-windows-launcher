@@ -10,7 +10,9 @@ Set-StrictMode -Version Latest
 
 $nodeExe = Join-Path $RuntimeRoot 'runtime/node/node.exe'
 $launcher = Join-Path $RuntimeRoot 'launcher/launcher.mjs'
-foreach ($requiredPath in @($nodeExe, $launcher)) {
+$dshEntry = Join-Path $RuntimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js'
+$directoryPickerPatch = Join-Path $RuntimeRoot 'launcher/browse-directory-picker.patch.yml'
+foreach ($requiredPath in @($nodeExe, $launcher, $dshEntry, $directoryPickerPatch)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required launcher path is missing: $requiredPath"
     }
@@ -18,13 +20,23 @@ foreach ($requiredPath in @($nodeExe, $launcher)) {
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("dsh-launcher-integration-" + [Guid]::NewGuid())
 $previousDataRoot = $env:DSH_LAUNCHER_DATA_ROOT
+$previousDshHome = $env:DSH_HOME
 $startProcess = $null
 $portReservation = $null
 $startOutput = Join-Path $testRoot 'launcher-stdout.log'
 $startError = Join-Path $testRoot 'launcher-stderr.log'
 try {
     $env:DSH_LAUNCHER_DATA_ROOT = $testRoot
+    $env:DSH_HOME = Join-Path $testRoot 'DeepSeekHarness/dsh'
     New-Item -ItemType Directory -Force -Path $testRoot | Out-Null
+    $configOutput = & $nodeExe $dshEntry --profile web --patch $directoryPickerPatch --dump-config 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Harness rejected the browse directory-picker patch: $configOutput"
+    }
+    $configText = $configOutput -join "`n"
+    if ($configText -notmatch '@deepseek-ai/dsh-host-directory-picker-browse' -or $configText -notmatch '@deepseek-ai/dsh-client-ui-directory-picker-browse') {
+        throw "Harness did not compose the official in-page directory picker: $configText"
+    }
     $portReservation = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
     $portReservation.Start()
     $expectedPort = $Port + 1
@@ -51,6 +63,11 @@ try {
     $expectedWorkspace = Join-Path $testRoot 'DeepSeekHarness/workspace'
     if ($instance.workspace -ne $expectedWorkspace -or -not (Test-Path -LiteralPath $expectedWorkspace -PathType Container)) {
         throw "Launcher did not create its private default workspace. Expected: $expectedWorkspace Actual: $($instance.workspace)"
+    }
+
+    $launchLog = Get-Content -LiteralPath $instance.logPath -Raw
+    if ($launchLog -notmatch 'Starting DeepSeek Harness') {
+        throw 'Launcher did not record the Harness startup.'
     }
 
     $webDeadline = (Get-Date).AddSeconds(30)
@@ -96,6 +113,7 @@ try {
         $portReservation.Stop()
     }
     if ($null -eq $previousDataRoot) { Remove-Item Env:DSH_LAUNCHER_DATA_ROOT -ErrorAction SilentlyContinue } else { $env:DSH_LAUNCHER_DATA_ROOT = $previousDataRoot }
+    if ($null -eq $previousDshHome) { Remove-Item Env:DSH_HOME -ErrorAction SilentlyContinue } else { $env:DSH_HOME = $previousDshHome }
     if (-not $KeepArtifacts -and (Test-Path -LiteralPath $testRoot)) {
         Remove-Item -LiteralPath $testRoot -Recurse -Force
     }

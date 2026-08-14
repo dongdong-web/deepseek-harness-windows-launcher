@@ -40,6 +40,7 @@ try {
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
         'launcher/start.vbs',
         'launcher/start.cmd',
+        'launcher/browse-directory-picker.patch.yml',
         'runtime-manifest.json',
         'LICENSE',
         'README.md',

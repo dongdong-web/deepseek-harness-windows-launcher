@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
+  buildHarnessArguments,
   buildHarnessEnvironment,
   findAvailablePort,
   isPortAvailable,
@@ -35,6 +36,13 @@ try {
   assert.equal(environment.NODE_OPTIONS, undefined);
   assert.equal(environment.NODE_PATH, undefined);
   assert.equal(environment.npm_config_prefix, undefined);
+  assert.deepEqual(buildHarnessArguments(paths, 32000), [
+    paths.dshEntry,
+    '--profile', 'web',
+    '--patch', paths.directoryPickerPatchPath,
+    '--host', '127.0.0.1',
+    '--port', '32000',
+  ]);
 
   const port = await findAvailablePort(32000, 5);
   assert.equal(await isPortAvailable(port), true);
