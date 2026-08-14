@@ -33,7 +33,7 @@
   ./artifacts/portable/DeepSeekHarness/app/node_modules/@deepseek-ai/dsh/lib/bin.js web
 ```
 
-便携版已经包含正式启动器。双击 `launcher/start.vbs` 会在后台启动 DSH 并自动打开浏览器；需要查看命令输出或诊断时，使用 `launcher/start.cmd`：
+便携版已经包含正式启动器。首次双击 `launcher/start.vbs` 会在后台启动 DSH、自动打开浏览器，并在当前 Windows 用户的桌面创建（或更新）“DeepSeek Harness”快捷方式；之后直接双击桌面图标即可。需要查看命令输出或诊断时，使用 `launcher/start.cmd`：
 
 ```powershell
 ./artifacts/portable/DeepSeekHarness/launcher/start.cmd status
@@ -50,7 +50,7 @@
 ./scripts/build-portable-zip.ps1
 ```
 
-会生成 `artifacts/dist/DeepSeekHarness-Portable-*.zip` 及同名的 `.sha256` 校验文件。用户下载后只需解压 ZIP 到任意空目录，再双击其中的 `launcher\start.vbs`；不需要管理员权限，也不会安装或修改 Node.js、npm、PowerShell 或 `PATH`。如果 3080 被占用，启动器会自动尝试后续端口。
+会生成 `artifacts/dist/DeepSeekHarness-Portable-*.zip` 及同名的 `.sha256` 校验文件。用户下载后只需解压 ZIP 到任意空目录，再双击其中的 `launcher\start.vbs`；它会创建桌面快捷方式。若之后移动了解压目录，再双击一次该文件即可刷新快捷方式。不需要管理员权限，也不会安装或修改 Node.js、npm、PowerShell 或 `PATH`。如果 3080 被占用，启动器会自动尝试后续端口。
 
 ZIP 同时包含本项目 `LICENSE`、`README.md` 和 `THIRD_PARTY_NOTICES.md`，可离线查看使用说明和第三方许可来源。
 
