@@ -10,7 +10,14 @@ $nodeExe = Join-Path $RuntimeRoot 'runtime/node/node.exe'
 $dshEntry = Join-Path $RuntimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js'
 $pwshExe = Join-Path $RuntimeRoot 'runtime/pwsh/pwsh.exe'
 
-foreach ($requiredPath in @($nodeExe, $dshEntry, $pwshExe)) {
+foreach ($requiredPath in @(
+    $nodeExe,
+    $dshEntry,
+    $pwshExe,
+    (Join-Path $RuntimeRoot 'LICENSE'),
+    (Join-Path $RuntimeRoot 'README.md'),
+    (Join-Path $RuntimeRoot 'THIRD_PARTY_NOTICES.md')
+)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required runtime file is missing: $requiredPath"
     }

@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem with the Windows portable launcher.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste API keys, tokens, private workspace files, or unredacted personal paths.
+  - type: input
+    id: version
+    attributes:
+      label: Launcher version
+      description: The ZIP or Release version you used.
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 23H2 x64
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: 1. Extract the ZIP to an empty folder\n2. Double-click launcher\\start.vbs\n3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and redacted logs
+      description: Remove API keys, tokens, and private information before submitting.
+    validations:
+      required: true

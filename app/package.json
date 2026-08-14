@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0-dev",
   "description": "Pinned production dependency closure for DeepSeek Harness Community Launcher",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "dependencies": {
     "@deepseek-ai/dsh": "0.1.0-rc.6"
   }

@@ -35,6 +35,9 @@ try {
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.vbs') -Value 'fixture-vbs'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'launcher/start.cmd') -Value 'fixture-cmd'
     Set-Content -LiteralPath (Join-Path $runtimeRoot 'runtime-manifest.json') -Value '{"launcher":{"version":"test"}}'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'LICENSE') -Value 'fixture-license'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'README.md') -Value 'fixture-readme'
+    Set-Content -LiteralPath (Join-Path $runtimeRoot 'THIRD_PARTY_NOTICES.md') -Value 'fixture-third-party-notices'
     Set-Content -LiteralPath (Join-Path $runtimeRoot '.smoke-dsh-home/transient.txt') -Value 'must not ship'
 
     & $buildScript -SkipRuntimeBuild -RuntimeRoot $runtimeRoot -OutputPath $archivePath -MinimumArchiveSizeBytes 1KB
@@ -62,7 +65,10 @@ try {
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
         'launcher/start.vbs',
         'launcher/start.cmd',
-        'runtime-manifest.json'
+        'runtime-manifest.json',
+        'LICENSE',
+        'README.md',
+        'THIRD_PARTY_NOTICES.md'
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $payloadRoot $relativePath) -PathType Leaf)) {
             throw "Portable ZIP extraction is missing: $relativePath"

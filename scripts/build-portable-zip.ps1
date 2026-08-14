@@ -42,7 +42,10 @@ foreach ($requiredPath in @(
     (Join-Path $runtimeRoot 'app/node_modules/@deepseek-ai/dsh/lib/bin.js'),
     (Join-Path $runtimeRoot 'launcher/start.vbs'),
     (Join-Path $runtimeRoot 'launcher/start.cmd'),
-    (Join-Path $runtimeRoot 'runtime-manifest.json')
+    (Join-Path $runtimeRoot 'runtime-manifest.json'),
+    (Join-Path $runtimeRoot 'LICENSE'),
+    (Join-Path $runtimeRoot 'README.md'),
+    (Join-Path $runtimeRoot 'THIRD_PARTY_NOTICES.md')
 )) {
     Assert-PortableInput -Path $requiredPath
 }
@@ -55,7 +58,7 @@ New-Item -ItemType Directory -Force -Path $distRoot, (Split-Path -Parent $target
 if (Test-Path -LiteralPath $targetPath) {
     Remove-Item -LiteralPath $targetPath -Force
 }
-& $tar.Path -a -c -f $targetPath -C $runtimeRoot runtime app launcher runtime-manifest.json
+& $tar.Path -a -c -f $targetPath -C $runtimeRoot runtime app launcher runtime-manifest.json LICENSE README.md THIRD_PARTY_NOTICES.md
 if ($LASTEXITCODE -ne 0) {
     throw "tar.exe failed to create portable ZIP (exit code $LASTEXITCODE)."
 }
@@ -73,7 +76,10 @@ foreach ($expectedEntry in @(
     'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
     'launcher/start.vbs',
     'launcher/start.cmd',
-    'runtime-manifest.json'
+    'runtime-manifest.json',
+    'LICENSE',
+    'README.md',
+    'THIRD_PARTY_NOTICES.md'
 )) {
     if ($entries -notcontains $expectedEntry) {
         throw "Portable ZIP is missing required entry: $expectedEntry"

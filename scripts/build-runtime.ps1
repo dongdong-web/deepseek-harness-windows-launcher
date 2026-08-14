@@ -118,6 +118,14 @@ $portableLauncher = Join-Path $portableRoot 'launcher'
 New-Item -ItemType Directory -Force -Path $portableLauncher | Out-Null
 Copy-Item -Path (Join-Path $repoRoot 'launcher/*') -Destination $portableLauncher -Force
 
+foreach ($releaseDocument in @('LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md')) {
+    $sourceDocument = Join-Path $repoRoot $releaseDocument
+    if (-not (Test-Path -LiteralPath $sourceDocument -PathType Leaf)) {
+        throw "Release document is missing: $sourceDocument"
+    }
+    Copy-Item -LiteralPath $sourceDocument -Destination (Join-Path $portableRoot $releaseDocument) -Force
+}
+
 $lockFile = Join-Path $repoRoot 'app/package-lock.json'
 if (Test-Path -LiteralPath $lockFile) {
     Copy-Item -LiteralPath $lockFile -Destination (Join-Path $portableApp 'package-lock.json') -Force

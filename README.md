@@ -52,6 +52,8 @@
 
 会生成 `artifacts/dist/DeepSeekHarness-Portable-*.zip` 及同名的 `.sha256` 校验文件。用户下载后只需解压 ZIP 到任意空目录，再双击其中的 `launcher\start.vbs`；不需要管理员权限，也不会安装或修改 Node.js、npm、PowerShell 或 `PATH`。如果 3080 被占用，启动器会自动尝试后续端口。
 
+ZIP 同时包含本项目 `LICENSE`、`README.md` 和 `THIRD_PARTY_NOTICES.md`，可离线查看使用说明和第三方许可来源。
+
 验证运行时与 Web UI：
 
 ```powershell
@@ -72,8 +74,17 @@
 
 ## 许可证与来源
 
+- 本项目的启动器代码和文档采用 [MIT License](LICENSE)。
 - DeepSeek Harness：MIT，详见官方仓库的 `LICENSE` 与 `THIRD_PARTY_NOTICES.md`。
 - Node.js：构建脚本从 nodejs.org 官方分发下载。
 - PowerShell：构建脚本从 PowerShell 官方 GitHub Release 下载。
 
 具体版本、下载地址及哈希值在 [`config/runtime-manifest.json`](config/runtime-manifest.json) 中维护。
+
+完整的分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。本项目为非官方社区项目，不代表 DeepSeek，也不提供官方支持。
+
+## 社区协作与发布
+
+欢迎通过 [贡献指南](CONTRIBUTING.md) 提交改进。请在公开 Issue 中删除 API Key、令牌、私有工作区内容和个人信息；安全问题遵循 [SECURITY.md](SECURITY.md)。
+
+创建 GitHub 仓库后，推送 `v*` 标签会由 `.github/workflows/release.yml` 在干净的 Windows Runner 中构建并验证 ZIP，上传 ZIP 与 SHA-256 文件，并创建同名 GitHub Release。发布标签前应先更新 `config/runtime-manifest.json` 中的启动器版本，使其与标签一致。

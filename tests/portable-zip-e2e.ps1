@@ -40,7 +40,10 @@ try {
         'app/node_modules/@deepseek-ai/dsh/lib/bin.js',
         'launcher/start.vbs',
         'launcher/start.cmd',
-        'runtime-manifest.json'
+        'runtime-manifest.json',
+        'LICENSE',
+        'README.md',
+        'THIRD_PARTY_NOTICES.md'
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $runtimeRoot $relativePath) -PathType Leaf)) {
             throw "Portable ZIP output is missing: $relativePath"
