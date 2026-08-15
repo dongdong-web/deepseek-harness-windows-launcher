@@ -60,7 +60,7 @@ export function parseCommandLine(argumentsList) {
     throw new Error(`Unknown option: ${argument}`);
   }
 
-  if (!['start', 'status', 'stop', 'open', 'help'].includes(command)) {
+  if (!['start', 'status', 'stop', 'restart', 'open', 'help'].includes(command)) {
     throw new Error(`Unknown command: ${command}`);
   }
   return { command, options };
@@ -76,6 +76,16 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
     dshEntry: join(root, 'app', 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
     drivePickerPackageDirectory: join(root, 'app', 'node_modules', '@dsh-community', 'dsh-client-ui-drive-picker'),
     drivePickerProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@dsh-community', 'dsh-client-ui-drive-picker'),
+    fileExplorerPackageDirectory: join(root, 'app', 'node_modules', 'dsh-file-explorer'),
+    fileExplorerProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-file-explorer'),
+    chatOutlinePackageDirectory: join(root, 'app', 'node_modules', 'dsh-chat-outline'),
+    chatOutlineProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-chat-outline'),
+    costMeterPackageDirectory: join(root, 'app', 'node_modules', '@steven-wu', 'dsh-cost-meter'),
+    costMeterProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@steven-wu', 'dsh-cost-meter'),
+    balanceMeterPackageDirectory: join(root, 'app', 'node_modules', 'dsh-balance-meter'),
+    balanceMeterProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-balance-meter'),
+    profilePatchPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml'),
+    profilePatchBackupPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml.launcher-bak'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
     logRoot: join(dataRoot, 'logs'),
     nodeDirectory: join(root, 'runtime', 'node'),
@@ -173,6 +183,14 @@ function ensureRuntimeFiles(paths) {
     paths.directoryPickerPatchPath,
     join(paths.drivePickerPackageDirectory, 'package.json'),
     join(paths.drivePickerPackageDirectory, 'client.js'),
+    join(paths.fileExplorerPackageDirectory, 'package.json'),
+    join(paths.fileExplorerPackageDirectory, 'lib', 'client.js'),
+    join(paths.chatOutlinePackageDirectory, 'package.json'),
+    join(paths.chatOutlinePackageDirectory, 'lib', 'client.js'),
+    join(paths.costMeterPackageDirectory, 'package.json'),
+    join(paths.costMeterPackageDirectory, 'lib', 'client.js'),
+    join(paths.balanceMeterPackageDirectory, 'package.json'),
+    join(paths.balanceMeterPackageDirectory, 'lib', 'client.js'),
   ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
@@ -181,9 +199,74 @@ function ensureRuntimeFiles(paths) {
 }
 
 export function ensureCommunityPluginProfileFallback(paths) {
-  const targetDirectory = paths.drivePickerPackageDirectory;
-  const profileLink = paths.drivePickerProfileLink;
+  ensureProfileFallbackLink(paths.fileExplorerPackageDirectory, paths.fileExplorerProfileLink);
+  ensureProfileFallbackLink(paths.drivePickerPackageDirectory, paths.drivePickerProfileLink);
+  ensureProfileFallbackLink(paths.chatOutlinePackageDirectory, paths.chatOutlineProfileLink);
+  ensureProfileFallbackLink(paths.costMeterPackageDirectory, paths.costMeterProfileLink);
+  ensureProfileFallbackLink(paths.balanceMeterPackageDirectory, paths.balanceMeterProfileLink);
+}
 
+const MANAGED_SECTION_START = '# --- DeepSeek Harness Community Launcher: managed section (start) ---';
+const MANAGED_SECTION_END = '# --- DeepSeek Harness Community Launcher: managed section (end) ---';
+
+/**
+ * Merge the launcher's plugin roster (the --patch true source) into the web
+ * profile's own cordis.patch.yml, which DSH's Cordis HMR watches. This is what
+ * makes plugin changes hot-reloadable without restarting the service.
+ *
+ * Only the managed section (between the markers) is replaced; any user-authored
+ * patch content above or below it is preserved. The previous profile patch is
+ * backed up first so a failed boot can be rolled back.
+ * @param paths - resolved launcher paths.
+ * @returns the new profile patch text.
+ */
+export function syncManagedPatches(paths) {
+  const source = readFileSync(paths.directoryPickerPatchPath, 'utf8');
+  const profilePath = paths.profilePatchPath;
+
+  let existing = '';
+  if (existsSync(profilePath)) {
+    existing = readFileSync(profilePath, 'utf8');
+    // Back up the previous state (before this sync) for failure rollback.
+    writeFileSync(paths.profilePatchBackupPath, existing, 'utf8');
+  }
+
+  // Strip the previous managed section, preserving user content on both sides.
+  let withoutManaged = existing.replace(
+    new RegExp(`\\s*${escapeRegExp(MANAGED_SECTION_START)}[\\s\\S]*?${escapeRegExp(MANAGED_SECTION_END)}\\s*`),
+    '',
+  ).trim();
+
+  // A bare `[]` is DSH's empty-profile sentinel. It is a complete YAML document,
+  // so the managed block sequence cannot follow it without a `---` separator.
+  // Treat it as empty so the managed section becomes the sole top-level list.
+  if (withoutManaged === '[]') {
+    withoutManaged = '';
+  }
+
+  const managed = [
+    '',
+    MANAGED_SECTION_START,
+    '# Managed by the community launcher for hot-reloadable plugins. DSH watches',
+    '# this profile patch layer via Cordis HMR: editing the roster below applies',
+    '# without restarting. Do not edit this section by hand — edit the launcher',
+    '# source instead: launcher/browse-directory-picker.patch.yml',
+    source.trim(),
+    MANAGED_SECTION_END,
+    '',
+  ].join('\n');
+
+  const next = [withoutManaged, managed].filter((part) => part.trim() !== '').join('\n') + '\n';
+  writeFileSync(profilePath, next, 'utf8');
+  return next;
+}
+
+/** Escape a literal string for use inside a RegExp constructor. */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function ensureProfileFallbackLink(targetDirectory, profileLink) {
   let existing;
   try {
     existing = lstatSync(profileLink);
@@ -195,7 +278,7 @@ export function ensureCommunityPluginProfileFallback(paths) {
 
   if (existing) {
     if (!existing.isSymbolicLink()) {
-      throw new Error(`Community drive-picker path already exists and is not launcher-managed: ${profileLink}`);
+      throw new Error(`Community plugin path already exists and is not launcher-managed: ${profileLink}`);
     }
     try {
       if (resolve(realpathSync(profileLink)) === resolve(realpathSync(targetDirectory))) {
@@ -212,10 +295,13 @@ export function ensureCommunityPluginProfileFallback(paths) {
 }
 
 export function buildHarnessArguments(paths, port) {
+  // The plugin roster is merged into the profile's own cordis.patch.yml (see
+  // syncManagedPatches) so Cordis HMR watches it and hot-reloads plugin
+  // changes. No --patch overlay is passed here: passing both would register
+  // the same plugin ids twice and fail the loader tree.
   return [
     paths.dshEntry,
     '--profile', 'web',
-    '--patch', paths.directoryPickerPatchPath,
     '--host', '127.0.0.1',
     '--port', String(port),
   ];
@@ -338,6 +424,7 @@ export async function startHarness(paths, options) {
   mkdirSync(paths.logRoot, { recursive: true });
   mkdirSync(paths.dshHome, { recursive: true });
   ensureCommunityPluginProfileFallback(paths);
+  syncManagedPatches(paths);
 
   const logPath = join(paths.logRoot, `dsh-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
   const instance = {
@@ -375,6 +462,21 @@ export async function startHarness(paths, options) {
     await waitForServer(port, child, START_TIMEOUT_MS);
     return { alreadyRunning: false, child, instance, port };
   } catch (error) {
+    // Roll back the managed profile patch if the boot failed, so a bad roster
+    // cannot leave the profile in a broken state for the next start.
+    try {
+      if (existsSync(paths.profilePatchBackupPath)) {
+        const backedUp = readFileSync(paths.profilePatchBackupPath, 'utf8');
+        if (existsSync(paths.profilePatchPath)) {
+          const current = readFileSync(paths.profilePatchPath, 'utf8');
+          if (current.includes(MANAGED_SECTION_START)) {
+            writeFileSync(paths.profilePatchPath, backedUp, 'utf8');
+          }
+        }
+      }
+    } catch {
+      // Rollback is best-effort; the next start re-syncs anyway.
+    }
     if (child && child.pid) {
       stopProcessTree(child.pid);
     }
@@ -402,6 +504,7 @@ Usage:
   launcher.mjs start [--workspace <path>] [--port <port>] [--no-browser]
   launcher.mjs status
   launcher.mjs open
+  launcher.mjs restart [--workspace <path>] [--port <port>] [--no-browser]
   launcher.mjs stop
 
 Options:
@@ -410,6 +513,20 @@ Options:
   --no-browser        Start without opening the default browser.
 
 The --data-root option is reserved for diagnostics and automated tests.`);
+}
+
+function stopRunningInstance(paths) {
+  const result = readInstance(paths.lockPath);
+  if (!result.active) {
+    clearStaleLock(paths);
+    return false;
+  }
+  if (result.initializing) {
+    throw new Error('DeepSeek Harness is still starting. Please try restarting again in a moment.');
+  }
+  stopProcessTree(result.instance.harnessPid || result.instance.launcherPid);
+  removeLock(paths);
+  return true;
 }
 
 async function main() {
@@ -455,20 +572,23 @@ async function main() {
   }
 
   if (command === 'stop') {
-    const result = readInstance(paths.lockPath);
-    if (!result.active) {
-      clearStaleLock(paths);
+    const stopped = stopRunningInstance(paths);
+    if (!stopped) {
       console.log('DeepSeek Harness is not running.');
       return;
     }
-    if (result.initializing) {
-      console.log('DeepSeek Harness is still starting. Please try stopping it again in a moment.');
-      return;
-    }
-    stopProcessTree(result.instance.harnessPid || result.instance.launcherPid);
-    removeLock(paths);
     console.log('DeepSeek Harness has been stopped.');
     return;
+  }
+
+  if (command === 'restart') {
+    const stopped = stopRunningInstance(paths);
+    if (stopped) {
+      console.log('DeepSeek Harness stopped; restarting…');
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 1500));
+    } else {
+      console.log('DeepSeek Harness was not running; starting…');
+    }
   }
 
   const started = await startHarness(paths, options);

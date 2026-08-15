@@ -162,6 +162,38 @@ if (-not (Test-Path -LiteralPath $drivePickerSource -PathType Container)) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $drivePickerDestination) | Out-Null
 Copy-Item -LiteralPath $drivePickerSource -Destination $drivePickerDestination -Recurse -Force
 
+$fileExplorerSource = Join-Path $repoRoot 'app/community-plugins/dsh-file-explorer'
+$fileExplorerDestination = Join-Path $portableApp 'node_modules/dsh-file-explorer'
+if (-not (Test-Path -LiteralPath $fileExplorerSource -PathType Container)) {
+    throw "Community file-explorer source is missing: $fileExplorerSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $fileExplorerDestination) | Out-Null
+Copy-Item -LiteralPath $fileExplorerSource -Destination $fileExplorerDestination -Recurse -Force
+
+$chatOutlineSource = Join-Path $repoRoot 'app/community-plugins/dsh-chat-outline'
+$chatOutlineDestination = Join-Path $portableApp 'node_modules/dsh-chat-outline'
+if (-not (Test-Path -LiteralPath $chatOutlineSource -PathType Container)) {
+    throw "Community chat-outline source is missing: $chatOutlineSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $chatOutlineDestination) | Out-Null
+Copy-Item -LiteralPath $chatOutlineSource -Destination $chatOutlineDestination -Recurse -Force
+
+$costMeterSource = Join-Path $repoRoot 'app/community-plugins/dsh-cost-meter'
+$costMeterDestination = Join-Path $portableApp 'node_modules/@steven-wu/dsh-cost-meter'
+if (-not (Test-Path -LiteralPath $costMeterSource -PathType Container)) {
+    throw "Community cost-meter source is missing: $costMeterSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $costMeterDestination) | Out-Null
+Copy-Item -LiteralPath $costMeterSource -Destination $costMeterDestination -Recurse -Force
+
+$balanceMeterSource = Join-Path $repoRoot 'app/community-plugins/dsh-balance-meter'
+$balanceMeterDestination = Join-Path $portableApp 'node_modules/dsh-balance-meter'
+if (-not (Test-Path -LiteralPath $balanceMeterSource -PathType Container)) {
+    throw "Community balance-meter source is missing: $balanceMeterSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $balanceMeterDestination) | Out-Null
+Copy-Item -LiteralPath $balanceMeterSource -Destination $balanceMeterDestination -Recurse -Force
+
 $entryPoint = Join-Path $portableApp $manifest.dsh.entryPoint
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     throw "DSH entry point was not found at '$entryPoint'."

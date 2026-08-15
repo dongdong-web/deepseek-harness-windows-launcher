@@ -1,9 +1,9 @@
 # The community launcher deliberately prefers DSH's in-page directory browser
 # on Windows.  The stock auto picker opens a separate native window, which can
-# remain behind the browser on some Windows desktops.  This official DSH patch
-# replaces that auto row with the official browser-backed host plus this
-# launcher's drive-aware browser client; it is passed via --patch and never
-# written into a user's DSH profile.
+# remain behind the browser on some Windows desktops.  This file is the single
+# true source for the launcher's plugin roster: at startup the launcher merges
+# it into the web profile's own cordis.patch.yml (watched by Cordis HMR), so
+# plugin changes hot-reload without restarting the service.
 - id: directory-picker
   disabled: true
 
@@ -13,3 +13,15 @@
 
     - id: directory-picker-browse-client
       name: '@dsh-community/dsh-client-ui-drive-picker'
+
+    - id: file-explorer
+      name: dsh-file-explorer
+
+    - id: dsh-chat-outline
+      name: dsh-chat-outline
+
+    - id: cost-meter
+      name: '@steven-wu/dsh-cost-meter'
+
+    - id: balance
+      name: 'dsh-balance-meter'
