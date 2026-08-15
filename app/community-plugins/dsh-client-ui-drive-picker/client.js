@@ -30,6 +30,8 @@ window.__ModuleLoader__.load({
       .dshCommunityDrivePickerFolders{display:flex;flex:1;flex-direction:column;gap:2px;min-width:0;overflow-y:auto;padding-right:8px}
       .dshCommunityDrivePickerFolder{display:flex;align-items:center;min-height:34px;width:100%;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;text-align:left;padding:0 8px;font:inherit;font-size:13px}
       .dshCommunityDrivePickerFolder:hover{background:var(--dsw-alias-interactive-bg-hover)}
+      .dshCommunityDrivePickerFolder[data-up=true]{color:var(--dsw-alias-label-secondary);border-bottom:1px solid var(--dsw-alias-border-l3);border-radius:7px 7px 0 0}
+      .dshCommunityDrivePickerFolder[data-up=true] .dshCommunityDrivePickerFolderUpIcon{display:inline-block;width:14px;margin-right:6px;text-align:center}
       .dshCommunityDrivePickerFolderName{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
       .dshCommunityDrivePickerMuted,.dshCommunityDrivePickerError{padding:8px;color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:20px}
       .dshCommunityDrivePickerError{color:var(--dsw-alias-state-error-primary)}
@@ -152,6 +154,8 @@ window.__ModuleLoader__.load({
       const disabled = busy || loading || creatingFolder;
       const visibleEntries = (listing?.entries ?? []).filter((entry) => showHidden || !entry.hidden);
       const currentPath = listing?.path ?? '';
+      const crumbs = listing?.crumbs ?? [];
+      const parentPath = crumbs.length > 1 ? crumbs[crumbs.length - 2].path : null;
       const canOpen = currentPath !== '' && !disabled && !editingPath && newFolderName === null;
       const commitPath = () => {
         if (pathDraft.trim() !== '') navigate(pathDraft.trim());
@@ -247,15 +251,31 @@ window.__ModuleLoader__.load({
                 className: 'dshCommunityDrivePickerFolders',
                 children: loading
                   ? jsx('div', { className: 'dshCommunityDrivePickerMuted', role: 'status', children: t('drivePicker.loading') })
-                  : visibleEntries.length > 0
-                    ? visibleEntries.map((entry) => jsx('button', {
+                  : [
+                      parentPath !== null && jsx('button', {
                         type: 'button',
                         className: 'dshCommunityDrivePickerFolder',
                         disabled: disabled || editingPath || newFolderName !== null,
-                        onClick: () => navigate(entry.path),
-                        children: jsx('span', { className: 'dshCommunityDrivePickerFolderName', children: entry.name }),
-                      }, entry.path))
-                    : jsx('div', { className: 'dshCommunityDrivePickerMuted', children: t('drivePicker.empty') }),
+                        'data-up': true,
+                        onClick: () => navigate(parentPath),
+                        children: jsxs('span', {
+                          className: 'dshCommunityDrivePickerFolderName',
+                          children: [
+                            jsx('span', { className: 'dshCommunityDrivePickerFolderUpIcon', children: '↑' }),
+                            t('drivePicker.up'),
+                          ],
+                        }),
+                      }, '..'),
+                      ...(visibleEntries.length > 0
+                        ? visibleEntries.map((entry) => jsx('button', {
+                            type: 'button',
+                            className: 'dshCommunityDrivePickerFolder',
+                            disabled: disabled || editingPath || newFolderName !== null,
+                            onClick: () => navigate(entry.path),
+                            children: jsx('span', { className: 'dshCommunityDrivePickerFolderName', children: entry.name }),
+                          }, entry.path))
+                        : [jsx('div', { className: 'dshCommunityDrivePickerMuted', children: t('drivePicker.empty') })]),
+                    ],
               }),
               error !== null && jsx('div', { className: 'dshCommunityDrivePickerError', role: 'alert', children: error }),
             ],
@@ -378,6 +398,7 @@ window.__ModuleLoader__.load({
             'drivePicker.title': '选择工作区目录',
             'drivePicker.path': '当前路径',
             'drivePicker.editPath': '输入路径',
+            'drivePicker.up': '上一级',
             'drivePicker.drives': '可用磁盘',
             'drivePicker.probingDrives': '正在检测磁盘…',
             'drivePicker.loading': '加载中…',
@@ -396,6 +417,7 @@ window.__ModuleLoader__.load({
             'drivePicker.title': 'Select Workspace Directory',
             'drivePicker.path': 'Current path',
             'drivePicker.editPath': 'Enter path',
+            'drivePicker.up': 'Up one level',
             'drivePicker.drives': 'Available drives',
             'drivePicker.probingDrives': 'Detecting drives…',
             'drivePicker.loading': 'Loading…',
