@@ -25,6 +25,7 @@ export function parseCommandLine(argumentsList) {
   const command = args[0] && !args[0].startsWith('-') ? args.shift() : 'start';
   const options = {
     dataRoot: process.env.DSH_LAUNCHER_DATA_ROOT,
+    lan: false,
     noBrowser: false,
     port: DEFAULT_PORT,
     workspace: undefined,
@@ -34,6 +35,10 @@ export function parseCommandLine(argumentsList) {
     const argument = args.shift();
     if (argument === '--no-browser') {
       options.noBrowser = true;
+      continue;
+    }
+    if (argument === '--lan') {
+      options.lan = true;
       continue;
     }
     if (argument === '--port' || argument === '--workspace' || argument === '--data-root') {
@@ -86,6 +91,10 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
     balanceTideProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-balance-tide'),
     sessionDeletePackageDirectory: join(root, 'app', 'node_modules', '@huanlin', 'dsh-plugin-session-delete'),
     sessionDeleteProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@huanlin', 'dsh-plugin-session-delete'),
+    dingPackageDirectory: join(root, 'app', 'node_modules', 'dsh-ding'),
+    dingProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-ding'),
+    lanPassPackageDirectory: join(root, 'app', 'node_modules', 'dsh-lan-pass'),
+    lanPassProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-lan-pass'),
     profilePatchPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml'),
     profilePatchBackupPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml.launcher-bak'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
@@ -197,6 +206,12 @@ function ensureRuntimeFiles(paths) {
     join(paths.sessionDeletePackageDirectory, 'package.json'),
     join(paths.sessionDeletePackageDirectory, 'src', 'client.js'),
     join(paths.sessionDeletePackageDirectory, 'src', 'index.js'),
+    join(paths.dingPackageDirectory, 'package.json'),
+    join(paths.dingPackageDirectory, 'lib', 'client.js'),
+    join(paths.dingPackageDirectory, 'lib', 'index.js'),
+    join(paths.dingPackageDirectory, 'notify.ps1'),
+    join(paths.lanPassPackageDirectory, 'package.json'),
+    join(paths.lanPassPackageDirectory, 'lib', 'index.js'),
   ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
@@ -211,10 +226,14 @@ export function ensureCommunityPluginProfileFallback(paths) {
   ensureProfileFallbackLink(paths.costMeterPackageDirectory, paths.costMeterProfileLink);
   ensureProfileFallbackLink(paths.balanceTidePackageDirectory, paths.balanceTideProfileLink);
   ensureProfileFallbackLink(paths.sessionDeletePackageDirectory, paths.sessionDeleteProfileLink);
+  ensureProfileFallbackLink(paths.dingPackageDirectory, paths.dingProfileLink);
+  ensureProfileFallbackLink(paths.lanPassPackageDirectory, paths.lanPassProfileLink);
 }
 
 const MANAGED_SECTION_START = '# --- DeepSeek Harness Community Launcher: managed section (start) ---';
 const MANAGED_SECTION_END = '# --- DeepSeek Harness Community Launcher: managed section (end) ---';
+const LAN_SECTION_START = '# --- DeepSeek Harness Community Launcher: LAN access (start) ---';
+const LAN_SECTION_END = '# --- DeepSeek Harness Community Launcher: LAN access (end) ---';
 
 /**
  * Merge the launcher's plugin roster (the --patch true source) into the web
@@ -227,7 +246,7 @@ const MANAGED_SECTION_END = '# --- DeepSeek Harness Community Launcher: managed 
  * @param paths - resolved launcher paths.
  * @returns the new profile patch text.
  */
-export function syncManagedPatches(paths) {
+export function syncManagedPatches(paths, lan = false) {
   const source = readFileSync(paths.directoryPickerPatchPath, 'utf8');
   const profilePath = paths.profilePatchPath;
 
@@ -238,9 +257,14 @@ export function syncManagedPatches(paths) {
     writeFileSync(paths.profilePatchBackupPath, existing, 'utf8');
   }
 
-  // Strip the previous managed section, preserving user content on both sides.
+  // Strip the previous managed section AND any leftover LAN block, preserving
+  // user content on both sides. The LAN block is removed unconditionally so a
+  // previous --lan start cannot leave 0.0.0.0 bound after LAN is turned off.
   let withoutManaged = existing.replace(
     new RegExp(`\\s*${escapeRegExp(MANAGED_SECTION_START)}[\\s\\S]*?${escapeRegExp(MANAGED_SECTION_END)}\\s*`),
+    '',
+  ).replace(
+    new RegExp(`\\s*${escapeRegExp(LAN_SECTION_START)}[\\s\\S]*?${escapeRegExp(LAN_SECTION_END)}\\s*`),
     '',
   ).trim();
 
@@ -251,6 +275,27 @@ export function syncManagedPatches(paths) {
     withoutManaged = '';
   }
 
+  // When LAN mode is on, additionally override the webserver bind to all
+  // interfaces. This is the official schema value (dsh-host-webserver allows
+  // 127.0.0.1 | 0.0.0.0); it also enables DSH's LAN-trust fence, which derives
+  // the LAN display addresses and trusts them for browser RPCs. The
+  // dsh-lan-pass plugin provides the password gate for remote devices.
+  const lanBlock = lan
+    ? [
+        '',
+        '# --- DeepSeek Harness Community Launcher: LAN access (start) ---',
+        '# Binds the Web UI to all interfaces so phones on the same network can',
+        '# reach it. The dsh-lan-pass plugin gates remote access with a password;',
+        '# localhost access is never intercepted.',
+        '- id: webserver',
+        '  config:',
+        "    host: '0.0.0.0'",
+        '    port: !!js ctx.webStartup.port ?? 3080',
+        '# --- DeepSeek Harness Community Launcher: LAN access (end) ---',
+        '',
+      ].join('\n')
+    : '';
+
   const managed = [
     '',
     MANAGED_SECTION_START,
@@ -259,6 +304,7 @@ export function syncManagedPatches(paths) {
     '# without restarting. Do not edit this section by hand — edit the launcher',
     '# source instead: launcher/browse-directory-picker.patch.yml',
     source.trim(),
+    lanBlock,
     MANAGED_SECTION_END,
     '',
   ].join('\n');
@@ -376,6 +422,23 @@ function openBrowser(url) {
   child.unref();
 }
 
+/** Allow inbound TCP on the Web UI port (LAN mode). Best-effort: requires elevation. */
+function allowFirewallPort(port) {
+  try {
+    const result = spawnSync('netsh.exe', [
+      'advfirewall', 'firewall', 'add', 'rule',
+      `name=DeepSeek Harness Web ${port}`,
+      'dir=in', 'action=allow', 'protocol=TCP', `localport=${port}`,
+    ], { encoding: 'utf8', windowsHide: true });
+    if (result.status === 0) {
+      writeLog(process.env.DSH_LOG_PATH || 'launcher', 'launcher', `Firewall rule added for TCP ${port}.`);
+    }
+  } catch {
+    // Non-elevated shells cannot add rules; LAN mode still works on most
+    // private networks where Windows prompts once on first bind.
+  }
+}
+
 async function waitForServer(port, child, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -431,7 +494,10 @@ export async function startHarness(paths, options) {
   mkdirSync(paths.logRoot, { recursive: true });
   mkdirSync(paths.dshHome, { recursive: true });
   ensureCommunityPluginProfileFallback(paths);
-  syncManagedPatches(paths);
+  syncManagedPatches(paths, Boolean(options.lan));
+  if (options.lan) {
+    allowFirewallPort(port);
+  }
 
   const logPath = join(paths.logRoot, `dsh-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
   const instance = {
@@ -517,6 +583,8 @@ Usage:
 Options:
   --workspace <path>  Harness working directory; defaults to this launcher's private empty workspace.
   --port <port>       Preferred local port; the launcher tries the next 19 ports if it is occupied.
+  --lan               Bind to all interfaces so phones on the same network can
+                      reach the Web UI (password-gated by the dsh-lan-pass plugin).
   --no-browser        Start without opening the default browser.
 
 The --data-root option is reserved for diagnostics and automated tests.`);

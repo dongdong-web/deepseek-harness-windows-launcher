@@ -202,6 +202,22 @@ if (-not (Test-Path -LiteralPath $sessionDeleteSource -PathType Container)) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $sessionDeleteDestination) | Out-Null
 Copy-Item -LiteralPath $sessionDeleteSource -Destination $sessionDeleteDestination -Recurse -Force
 
+$dingSource = Join-Path $repoRoot 'app/community-plugins/dsh-ding'
+$dingDestination = Join-Path $portableApp 'node_modules/dsh-ding'
+if (-not (Test-Path -LiteralPath $dingSource -PathType Container)) {
+    throw "Community dsh-ding source is missing: $dingSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dingDestination) | Out-Null
+Copy-Item -LiteralPath $dingSource -Destination $dingDestination -Recurse -Force
+
+$lanPassSource = Join-Path $repoRoot 'app/community-plugins/dsh-lan-pass'
+$lanPassDestination = Join-Path $portableApp 'node_modules/dsh-lan-pass'
+if (-not (Test-Path -LiteralPath $lanPassSource -PathType Container)) {
+    throw "Community dsh-lan-pass source is missing: $lanPassSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $lanPassDestination) | Out-Null
+Copy-Item -LiteralPath $lanPassSource -Destination $lanPassDestination -Recurse -Force
+
 $entryPoint = Join-Path $portableApp $manifest.dsh.entryPoint
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     throw "DSH entry point was not found at '$entryPoint'."

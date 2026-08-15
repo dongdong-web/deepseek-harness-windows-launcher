@@ -28,3 +28,6 @@
 
     - id: chameleon-session-delete
       name: '@huanlin/dsh-plugin-session-delete'
+
+    - id: dsh-ding
+      name: 'dsh-ding'

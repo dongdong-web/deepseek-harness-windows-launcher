@@ -1,0 +1,4 @@
+# LAN password gate bundle patch.
+- insert:
+    - id: dsh-lan-pass
+      name: 'dsh-lan-pass'

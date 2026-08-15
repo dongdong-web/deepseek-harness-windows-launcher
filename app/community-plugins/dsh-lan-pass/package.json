@@ -1,0 +1,41 @@
+{
+  "name": "dsh-lan-pass",
+  "version": "1.0.1",
+  "description": "DSH 局域网密码门禁：手机/平板输密钥直连 3080，内置 randomUUID polyfill 与移动端登录页。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "lan",
+    "auth",
+    "password"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x2802490130-prog/dsh-lan-pass"
+  },
+  "bugs": {
+    "url": "https://github.com/x2802490130-prog/dsh-lan-pass/issues"
+  },
+  "scripts": {
+    "test": "node test.mjs"
+  }
+}
