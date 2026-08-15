@@ -25,3 +25,6 @@
 
     - id: balance-tide
       name: 'dsh-balance-tide'
+
+    - id: chameleon-session-delete
+      name: '@huanlin/dsh-plugin-session-delete'

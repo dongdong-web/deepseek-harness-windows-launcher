@@ -84,6 +84,8 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
     costMeterProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@steven-wu', 'dsh-cost-meter'),
     balanceTidePackageDirectory: join(root, 'app', 'node_modules', 'dsh-balance-tide'),
     balanceTideProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-balance-tide'),
+    sessionDeletePackageDirectory: join(root, 'app', 'node_modules', '@huanlin', 'dsh-plugin-session-delete'),
+    sessionDeleteProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@huanlin', 'dsh-plugin-session-delete'),
     profilePatchPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml'),
     profilePatchBackupPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml.launcher-bak'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
@@ -192,6 +194,9 @@ function ensureRuntimeFiles(paths) {
     join(paths.balanceTidePackageDirectory, 'package.json'),
     join(paths.balanceTidePackageDirectory, 'client', 'client.js'),
     join(paths.balanceTidePackageDirectory, 'src', 'index.js'),
+    join(paths.sessionDeletePackageDirectory, 'package.json'),
+    join(paths.sessionDeletePackageDirectory, 'src', 'client.js'),
+    join(paths.sessionDeletePackageDirectory, 'src', 'index.js'),
   ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
@@ -205,6 +210,7 @@ export function ensureCommunityPluginProfileFallback(paths) {
   ensureProfileFallbackLink(paths.chatOutlinePackageDirectory, paths.chatOutlineProfileLink);
   ensureProfileFallbackLink(paths.costMeterPackageDirectory, paths.costMeterProfileLink);
   ensureProfileFallbackLink(paths.balanceTidePackageDirectory, paths.balanceTideProfileLink);
+  ensureProfileFallbackLink(paths.sessionDeletePackageDirectory, paths.sessionDeleteProfileLink);
 }
 
 const MANAGED_SECTION_START = '# --- DeepSeek Harness Community Launcher: managed section (start) ---';

@@ -194,6 +194,14 @@ if (-not (Test-Path -LiteralPath $balanceTideSource -PathType Container)) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $balanceTideDestination) | Out-Null
 Copy-Item -LiteralPath $balanceTideSource -Destination $balanceTideDestination -Recurse -Force
 
+$sessionDeleteSource = Join-Path $repoRoot 'app/community-plugins/dsh-plugin-session-delete'
+$sessionDeleteDestination = Join-Path $portableApp 'node_modules/@huanlin/dsh-plugin-session-delete'
+if (-not (Test-Path -LiteralPath $sessionDeleteSource -PathType Container)) {
+    throw "Community session-delete source is missing: $sessionDeleteSource"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $sessionDeleteDestination) | Out-Null
+Copy-Item -LiteralPath $sessionDeleteSource -Destination $sessionDeleteDestination -Recurse -Force
+
 $entryPoint = Join-Path $portableApp $manifest.dsh.entryPoint
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     throw "DSH entry point was not found at '$entryPoint'."
