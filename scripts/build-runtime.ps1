@@ -186,13 +186,13 @@ if (-not (Test-Path -LiteralPath $costMeterSource -PathType Container)) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $costMeterDestination) | Out-Null
 Copy-Item -LiteralPath $costMeterSource -Destination $costMeterDestination -Recurse -Force
 
-$balanceMeterSource = Join-Path $repoRoot 'app/community-plugins/dsh-balance-meter'
-$balanceMeterDestination = Join-Path $portableApp 'node_modules/dsh-balance-meter'
-if (-not (Test-Path -LiteralPath $balanceMeterSource -PathType Container)) {
-    throw "Community balance-meter source is missing: $balanceMeterSource"
+$balanceTideSource = Join-Path $repoRoot 'app/community-plugins/dsh-balance-tide'
+$balanceTideDestination = Join-Path $portableApp 'node_modules/dsh-balance-tide'
+if (-not (Test-Path -LiteralPath $balanceTideSource -PathType Container)) {
+    throw "Community balance-tide source is missing: $balanceTideSource"
 }
-New-Item -ItemType Directory -Force -Path (Split-Path -Parent $balanceMeterDestination) | Out-Null
-Copy-Item -LiteralPath $balanceMeterSource -Destination $balanceMeterDestination -Recurse -Force
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $balanceTideDestination) | Out-Null
+Copy-Item -LiteralPath $balanceTideSource -Destination $balanceTideDestination -Recurse -Force
 
 $entryPoint = Join-Path $portableApp $manifest.dsh.entryPoint
 if (-not (Test-Path -LiteralPath $entryPoint)) {

@@ -37,6 +37,8 @@ window.__ModuleLoader__.load({
 		const NS = "chatOutline";
 		const zh = {
 			"panel.title": "对话定位",
+			"panel.collapse": "收起",
+			"panel.expand": "展开",
 			"panel.filterPlaceholder": "过滤提问 / 回复…",
 			"panel.empty": "还没有对话内容。",
 			"panel.noMatch": "没有匹配的记录。",
@@ -51,6 +53,8 @@ window.__ModuleLoader__.load({
 		};
 		const en = {
 			"panel.title": "Conversation Outline",
+			"panel.collapse": "Collapse",
+			"panel.expand": "Expand",
 			"panel.filterPlaceholder": "Filter questions / replies…",
 			"panel.empty": "No conversation yet.",
 			"panel.noMatch": "No matching records.",
@@ -494,6 +498,8 @@ window.__ModuleLoader__.load({
 			header: { display: "flex", alignItems: "center", gap: 8, padding: "12px 14px 10px", borderBottom: "1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.08))" },
 			headerTitle: { flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
 			headerCount: { flex: "none", fontSize: 12, fontWeight: 500, color: "var(--dsw-alias-label-caption, #999)" },
+			collapseButton: { flex: "none", border: "none", background: "transparent", cursor: "pointer", color: "var(--dsw-alias-label-secondary, #666)", fontSize: 13, padding: "2px 6px", borderRadius: 6, fontFamily: "inherit" },
+			collapsedBar: { position: "absolute", bottom: 0, width: 32, zIndex: 1001, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, background: "var(--dsw-alias-bg-base, #fff)", borderRight: "1px solid var(--dsw-alias-border-l1, rgba(0,0,0,.12))", fontFamily: "var(--dsw-font-family, system-ui)", color: "var(--dsw-alias-label-primary, #111)", padding: "12px 0" },
 			filter: { margin: "8px 12px 4px", padding: "6px 10px", borderRadius: 8, border: "1px solid var(--dsw-alias-border-l2, rgba(0,0,0,.2))", fontSize: 13, background: "var(--dsw-alias-bg-base, #fff)", color: "var(--dsw-alias-label-primary, #111)", fontFamily: "inherit" },
 			notice: { margin: "2px 14px 4px", fontSize: 12, color: ACCENT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
 			noticeError: { color: "var(--dsw-alias-state-error-primary, #d33)" },
@@ -520,7 +526,9 @@ window.__ModuleLoader__.load({
 		const hoverCss =
 			'[data-chat-outline-line]:hover{background:var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.1))}' +
 			'[data-chat-outline-line]:disabled{opacity:.6;cursor:default}' +
-			'[data-chat-outline-entry]{scroll-margin:8px}';
+			'[data-chat-outline-entry]{scroll-margin:8px}' +
+			'[data-chat-outline-panel] button:hover{background:var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.1))}' +
+			'[data-chat-outline-collapsed] button:hover{background:var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.1))}';
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=\"dsh-chat-outline\"]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-chat-outline";
@@ -544,6 +552,7 @@ window.__ModuleLoader__.load({
 			const [notice, setNotice] = react.useState("");
 			const [noticeError, setNoticeError] = react.useState(false);
 			const [geometry, setGeometry] = react.useState(null); // { left, width, visible }
+			const [collapsed, setCollapsed] = react.useState(false);
 			const [sessionId, setSessionId] = react.useState(() => {
 				try {
 					return sessions.list.getSnapshot().current ?? null;
@@ -847,6 +856,28 @@ window.__ModuleLoader__.load({
 			const userLabel = t("panel.user");
 			const assistantLabel = t("panel.assistant");
 
+			// 收起态：只保留一条窄竖条，点击展开
+			if (collapsed) {
+				return react.createElement(
+					"div",
+					{
+						style: { ...s.collapsedBar, left: geometry.left, top: geometry.top, height: Math.max(120, window.innerHeight - geometry.top - 24) },
+						"data-chat-outline-collapsed": true
+					},
+					react.createElement(
+						"button",
+						{
+							type: "button",
+							style: { ...s.collapseButton, fontSize: 12, writingMode: "vertical-rl", textOrientation: "mixed", letterSpacing: 2 },
+							title: t("panel.title"),
+							"aria-label": t("panel.title"),
+							onClick: () => setCollapsed(false)
+						},
+						t("panel.title")
+					)
+				);
+			}
+
 			return react.createElement(
 				"div",
 				{
@@ -862,7 +893,18 @@ window.__ModuleLoader__.load({
 							"span",
 							{ style: s.headerCount },
 							t("panel.count", { count: entries.length })
-						)
+						),
+					react.createElement(
+						"button",
+						{
+							type: "button",
+							style: s.collapseButton,
+							title: t("panel.collapse"),
+							"aria-label": t("panel.collapse"),
+							onClick: () => setCollapsed(true)
+						},
+						"«"
+					)
 				),
 				historyLoading &&
 					react.createElement(

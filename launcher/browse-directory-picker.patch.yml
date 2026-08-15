@@ -23,5 +23,5 @@
     - id: cost-meter
       name: '@steven-wu/dsh-cost-meter'
 
-    - id: balance
-      name: 'dsh-balance-meter'
+    - id: balance-tide
+      name: 'dsh-balance-tide'

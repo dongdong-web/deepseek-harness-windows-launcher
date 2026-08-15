@@ -82,8 +82,8 @@ export function resolveLauncherPaths(runtimeRoot, environment = process.env, dat
     chatOutlineProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-chat-outline'),
     costMeterPackageDirectory: join(root, 'app', 'node_modules', '@steven-wu', 'dsh-cost-meter'),
     costMeterProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', '@steven-wu', 'dsh-cost-meter'),
-    balanceMeterPackageDirectory: join(root, 'app', 'node_modules', 'dsh-balance-meter'),
-    balanceMeterProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-balance-meter'),
+    balanceTidePackageDirectory: join(root, 'app', 'node_modules', 'dsh-balance-tide'),
+    balanceTideProfileLink: join(dataRoot, 'dsh', 'profiles', 'node_modules', 'dsh-balance-tide'),
     profilePatchPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml'),
     profilePatchBackupPath: join(dataRoot, 'dsh', 'profiles', 'web', 'cordis.patch.yml.launcher-bak'),
     lockPath: join(dataRoot, 'launcher', 'instance.json'),
@@ -189,8 +189,9 @@ function ensureRuntimeFiles(paths) {
     join(paths.chatOutlinePackageDirectory, 'lib', 'client.js'),
     join(paths.costMeterPackageDirectory, 'package.json'),
     join(paths.costMeterPackageDirectory, 'lib', 'client.js'),
-    join(paths.balanceMeterPackageDirectory, 'package.json'),
-    join(paths.balanceMeterPackageDirectory, 'lib', 'client.js'),
+    join(paths.balanceTidePackageDirectory, 'package.json'),
+    join(paths.balanceTidePackageDirectory, 'client', 'client.js'),
+    join(paths.balanceTidePackageDirectory, 'src', 'index.js'),
   ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Required private runtime path is missing: ${requiredPath}`);
@@ -203,7 +204,7 @@ export function ensureCommunityPluginProfileFallback(paths) {
   ensureProfileFallbackLink(paths.drivePickerPackageDirectory, paths.drivePickerProfileLink);
   ensureProfileFallbackLink(paths.chatOutlinePackageDirectory, paths.chatOutlineProfileLink);
   ensureProfileFallbackLink(paths.costMeterPackageDirectory, paths.costMeterProfileLink);
-  ensureProfileFallbackLink(paths.balanceMeterPackageDirectory, paths.balanceMeterProfileLink);
+  ensureProfileFallbackLink(paths.balanceTidePackageDirectory, paths.balanceTideProfileLink);
 }
 
 const MANAGED_SECTION_START = '# --- DeepSeek Harness Community Launcher: managed section (start) ---';
